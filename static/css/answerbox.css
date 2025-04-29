@@ -1,0 +1,271 @@
+/* Answer Box Container */
+.answer-box {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 1200px;
+    height: auto;
+    max-height: 90vh;
+    background-color: #1e1e1e;
+    border-radius: 12px;
+    padding: 25px;
+    z-index: 1000;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+    overflow: hidden;
+    animation: modalFadeIn 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: all 0.3s ease;
+    will-change: transform, opacity, width, left;
+}
+
+/* Answer Box in Split View */
+.answer-box.split-view {
+    left: 0;
+    transform: translateY(-50%);
+    width: calc(50% - 10px);
+    max-width: none;
+    height: 100vh;
+    border-radius: 12px;
+    padding: 20px;
+    margin-right: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+    transition: all 0.3s ease;
+    will-change: transform, opacity, width, left;
+}
+
+/* Modal Backdrop */
+.modal-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 999;
+    animation: backdropFadeIn 0.4s ease-out;
+    transition: opacity 0.3s ease;
+    will-change: opacity;
+}
+
+/* Keyframes for Modal Fade In */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -48%) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+/* Keyframes for Backdrop Fade In */
+@keyframes backdropFadeIn {
+    from {
+        opacity: 0;
+        background-color: rgba(0, 0, 0, 0);
+    }
+    to {
+        opacity: 1;
+        background-color: rgba(0, 0, 0, 0.8);
+    }
+}
+
+/* Modal Content */
+.modal-content {
+    height: 100%;
+    max-height: calc(90vh - 110px);
+    overflow-y: auto;
+    padding-right: 10px;
+    margin-bottom: 60px;
+    scroll-behavior: smooth;
+}
+
+/* Custom Scrollbar */
+.modal-content::-webkit-scrollbar {
+    width: 12px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+    background: #121212;
+    border-radius: 6px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+    background-color: #505050;
+    border-radius: 6px;
+    border: 2px solid #121212;
+    transition: background-color 0.2s ease;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+    background-color: #606060;
+}
+
+/* Preformatted Text */
+.answer-box pre {
+    background-color: #121212;
+    border-radius: 8px;
+    padding: 24px;
+    font-family: 'Fira Code', 'JetBrains Mono', 'Source Code Pro', monospace;
+    font-size: 16px;
+    line-height: 1.7;
+    color: #F0F0F0;
+    border: 2px solid #4B4B4B;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.6);
+    width: 100%;
+    position: relative;
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+    will-change: box-shadow, border-color;
+}
+
+.answer-box pre:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.8);
+    border-color: #5C5C5C;
+}
+
+/* Responsive Design */
+@media (min-width: 769px) {
+    .answer-box pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+}
+
+@media (max-width: 768px) {
+    .answer-box pre {
+        white-space: pre;
+        overflow-x: auto;
+    }
+    .answer-box.split-view {
+        width: 100%;
+        left: 0;
+        transform: translateY(-50%);
+        border-radius: 12px;
+        margin-right: 0;
+    }
+}
+
+/* Copy and Close Buttons Container */
+.copy-close-container {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 15px 25px;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #1e1e1e;
+    border-top: 1px solid #333;
+    transition: background-color 0.3s ease;
+}
+
+/* Button Styles */
+.copy-btn, .close-btn {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    min-height: 36px;
+    will-change: transform, box-shadow, background-color;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.copy-btn {
+    background-color: #238636;
+    color: #fff;
+}
+
+.copy-btn:hover {
+    background-color: #2ea043;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.copy-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.close-btn {
+    background-color: #D32F2F;
+    color: #fff;
+}
+
+.close-btn:hover {
+    background-color: #b71c1c;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.close-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Copied State Styling */
+.copy-btn.copied {
+    background-color: #2ea043;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.copy-btn.copied::before {
+    content: '✓';
+    margin-right: 8px;
+    font-size: 16px;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Ripple Effect */
+.copy-btn::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 10%, transparent 10.01%);
+    transform: scale(0);
+    transition: transform 0.5s ease, opacity 0.5s ease;
+    pointer-events: none;
+}
+
+.copy-btn:active::after {
+    transform: scale(2);
+    opacity: 0;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .copy-close-container {
+        flex-direction: column;
+        padding: 15px;
+    }
+    .copy-btn, .close-btn {
+        width: 100%;
+    }
+}

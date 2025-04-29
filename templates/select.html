@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SPPU Codes: Question Papers for academic subjects">
+    <title>SPPU Question Papers - Sppu Codes</title>
+
+    <meta name="description" content="Download and View free SPPU (Savitribai Phule Pune University) question papers for Computer Science, Engineering, Management & more. Get previous year papers for DSA, Statistics, MIS, OOP, OS, IoT & other subjects.">
+
+    <meta name="keywords" content="SPPU, question papers, SPPU question papers, SPPU previous year papers, SPPU exam papers, SPPU study materials, SPPU resources, SPPU academic resources,SPPU question papers, Pune University papers, DSA question papers, Statistics papers SPPU, MIS question papers 2019, Computer Graphics SPPU, Discrete Mathematics papers, OOP question papers, Operating Systems papers, IoT question papers, SE papers, Software Engineering question papers">
+
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://sppucodes.vercel.app/questionpapers"/>
+
+    
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="/static/css/select.css?v=1.5">
+    <link rel="icon" href="{{ url_for('get_image', filename='favicon.ico') }}" type="image/x-icon" fetchpriority="high">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" as="style">
+    <link rel="preload" href="/api/directories?path=" as="fetch" crossorigin="anonymous">
+
+    <!-- Load fonts with fallback -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    </noscript>
+
+    <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "WebPage",
+          "name": "SPPU Question Papers - Sppu Codes",
+          "description": "Download and View free SPPU (Savitribai Phule Pune University) question papers for Computer Science, Engineering, Management & more. Get previous year papers for DSA, Statistics, MIS, OOP, OS, IoT & other subjects.",
+          "url": "https://sppucodes.vercel.app/questionpapers",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://sppucodes.vercel.app/questionpapers?q={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          }
+        }
+    </script>
+</head>
+
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-actions">
+                <a href="/" class="btn btn-ghost">Home</a>
+            </div>
+            <a href="/questionpapers" class="app-title">SPPU <span>Question Papers</span></a>
+            <div style="width: 69px;"></div> <!-- Spacer div to balance the header -->
+        </nav>
+    </header>
+    
+    <main>
+        <div class="left-column">
+            <h1 class="page-title">Find SPPU Question Papers</h1>
+            <p class="page-description">Access previous years' question papers for SPPU courses to prepare for your exams. Select your branch, semester, and subject from the form to find the papers you need.</p>
+        </div>
+        
+        <div class="right-column">
+            <div class="paper-finder">
+                <div class="paper-finder-header">
+                    <h2 class="paper-finder-title">Select your branch, semester, and subject</h2>
+                </div>
+                
+                <div class="paper-finder-body">
+                    <div class="form-group">
+                        <label for="branch" class="form-label">Select Branch</label>
+                        <div class="select-wrapper">
+                            <select id="branch" aria-required="true">
+                                <option value="">Select Branch</option>
+                            </select>
+                            <div id="branch-loading" class="loading-indicator" style="display: none;">
+                                <div class="spinner"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="semester" class="form-label">Select Semester</label>
+                        <div class="select-wrapper">
+                            <select id="semester" aria-required="true" disabled>
+                                <option value="">Select Semester</option>
+                            </select>
+                            <div id="semester-loading" class="loading-indicator" style="display: none;">
+                                <div class="spinner"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="subject" class="form-label">Select Subject</label>
+                        <div class="select-wrapper">
+                            <select id="subject" aria-required="true" disabled>
+                                <option value="">Select Subject</option>
+                            </select>
+                            <div id="subject-loading" class="loading-indicator" style="display: none;">
+                                <div class="spinner"></div>
+                            </div>
+                        </div>
+                        <div id="subject-error" class="error-message" style="display: none;">
+                            No subjects available for this selection
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-action">
+                    <button id="continue-btn" class="btn btn-success" disabled>
+                        View Question Papers
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Cache for API responses
+        const apiCache = new Map();
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Start loading branches immediately
+            loadBranches();
+            
+            // Initialize the rest of the app
+            initApp();
+        });
+        
+        function initApp() {
+            bindEventListeners();
+            
+            // Prefetch the first branch's semesters if possible
+            setTimeout(() => {
+                const branchSelect = document.getElementById('branch');
+                if (branchSelect && branchSelect.options.length > 1) {
+                    // Prefetch semesters for the first branch
+                    const firstBranch = branchSelect.options[1].value;
+                    fetchSemesters(firstBranch, true); // Silent prefetch
+                }
+            }, 1000);
+        }
+        
+        function bindEventListeners() {
+            // Setup event listeners with debouncing
+            document.getElementById('branch').addEventListener('change', function() {
+                handleBranchChange(this.value);
+            });
+            
+            document.getElementById('semester').addEventListener('change', function() {
+                handleSemesterChange(this.value);
+            });
+            
+            document.getElementById('subject').addEventListener('change', function() {
+                updateButtonState();
+            });
+            
+            document.getElementById('continue-btn').addEventListener('click', handleContinueClick);
+            
+            // Prefetch on hover
+            document.getElementById('branch').addEventListener('mouseover', prefetchSemestersOnHover);
+            document.getElementById('semester').addEventListener('mouseover', prefetchSubjectsOnHover);
+        }
+        
+        function handleBranchChange(branchValue) {
+            resetSelect('semester', 'Select Semester');
+            resetSelect('subject', 'Select Subject');
+            
+            const semesterSelect = document.getElementById('semester');
+            const subjectSelect = document.getElementById('subject');
+            
+            semesterSelect.disabled = !branchValue;
+            subjectSelect.disabled = true;
+            hideElement('subject-error');
+            
+            if (branchValue) {
+                loadSemesters(branchValue);
+                
+                // Prefetch subjects for the first semester
+                setTimeout(() => {
+                    if (semesterSelect.options.length > 1) {
+                        const firstSemester = semesterSelect.options[1].value;
+                        fetchSubjects(branchValue, firstSemester, true); // Silent prefetch
+                    }
+                }, 500);
+            }
+            
+            updateButtonState();
+        }
+        
+        function handleSemesterChange(semesterValue) {
+            const branchValue = document.getElementById('branch').value;
+            resetSelect('subject', 'Select Subject');
+            
+            const subjectSelect = document.getElementById('subject');
+            subjectSelect.disabled = !semesterValue;
+            hideElement('subject-error');
+            
+            if (branchValue && semesterValue) {
+                loadSubjects(branchValue, semesterValue);
+            }
+            
+            updateButtonState();
+        }
+        
+        async function loadBranches() {
+            const cacheKey = 'branches';
+            
+            // Check cache first
+            if (apiCache.has(cacheKey)) {
+                const branches = apiCache.get(cacheKey);
+                populateSelect('branch', branches, 'Select Branch');
+                return;
+            }
+            
+            showElementLoading('branch', true);
+            try {
+                const response = await fetchWithTimeout('/api/directories?path=', {
+                    priority: 'high'
+                }, 5000);
+                
+                if (!response.ok) throw new Error('Failed to fetch branches');
+                
+                const branches = await response.json();
+                
+                // Cache the response
+                apiCache.set(cacheKey, branches);
+                
+                populateSelect('branch', branches, 'Select Branch');
+                
+                // Prefetch semesters for the first branch if available
+                if (branches.length > 0) {
+                    setTimeout(() => {
+                        fetchSemesters(branches[0], true); // Silent prefetch
+                    }, 500);
+                }
+            } catch (error) {
+                console.error('Error loading branches:', error);
+                showError('Failed to load branches. Please refresh the page and try again.');
+            } finally {
+                showElementLoading('branch', false);
+            }
+        }
+        
+        async function loadSemesters(branch) {
+            const cacheKey = `semesters-${branch}`;
+            
+            // Check cache first
+            if (apiCache.has(cacheKey)) {
+                const semesters = apiCache.get(cacheKey);
+                populateSelect('semester', semesters, 'Select Semester', formatSemester);
+                return;
+            }
+            
+            showElementLoading('semester', true);
+            try {
+                const semesters = await fetchSemesters(branch);
+                populateSelect('semester', semesters, 'Select Semester', formatSemester);
+            } catch (error) {
+                console.error('Error loading semesters:', error);
+                showError('Failed to load semesters. Please try again.');
+            } finally {
+                showElementLoading('semester', false);
+            }
+        }
+        
+        async function fetchSemesters(branch, silent = false) {
+            const cacheKey = `semesters-${branch}`;
+            
+            if (!silent) showElementLoading('semester', true);
+            
+            try {
+                const response = await fetchWithTimeout(`/api/directories?path=${encodeURIComponent(branch)}`, {
+                    priority: silent ? 'low' : 'high'
+                }, 5000);
+                
+                if (!response.ok) throw new Error('Failed to fetch semesters');
+                
+                const semesters = await response.json();
+                
+                // Cache the response
+                apiCache.set(cacheKey, semesters);
+                
+                return semesters;
+            } catch (error) {
+                if (!silent) {
+                    console.error('Error loading semesters:', error);
+                    showError('Failed to load semesters. Please try again.');
+                }
+                throw error;
+            } finally {
+                if (!silent) showElementLoading('semester', false);
+            }
+        }
+        
+        async function loadSubjects(branch, semester) {
+            const cacheKey = `subjects-${branch}-${semester}`;
+            
+            // Check cache first
+            if (apiCache.has(cacheKey)) {
+                const subjects = apiCache.get(cacheKey);
+                if (subjects.length === 0) {
+                    resetSelect('subject', 'No subjects available');
+                    showElement('subject-error');
+                } else {
+                    populateSelect('subject', subjects, 'Select Subject');
+                    hideElement('subject-error');
+                }
+                return;
+            }
+            
+            showElementLoading('subject', true);
+            try {
+                const subjects = await fetchSubjects(branch, semester);
+                if (subjects.length === 0) {
+                    resetSelect('subject', 'No subjects available');
+                    showElement('subject-error');
+                } else {
+                    populateSelect('subject', subjects, 'Select Subject');
+                    hideElement('subject-error');
+                }
+            } catch (error) {
+                console.error('Error loading subjects:', error);
+                showError('Failed to load subjects. Please try again.');
+            } finally {
+                showElementLoading('subject', false);
+            }
+        }
+        
+        async function fetchSubjects(branch, semester, silent = false) {
+            const cacheKey = `subjects-${branch}-${semester}`;
+            
+            if (!silent) showElementLoading('subject', true);
+            
+            try {
+                const response = await fetchWithTimeout(
+                    `/api/directories?path=${encodeURIComponent(branch)}/${encodeURIComponent(semester)}`, 
+                    { priority: silent ? 'low' : 'high' },
+                    5000
+                );
+                
+                if (!response.ok) throw new Error('Failed to fetch subjects');
+                
+                const subjects = await response.json();
+                
+                // Cache the response
+                apiCache.set(cacheKey, subjects);
+                
+                return subjects;
+            } catch (error) {
+                if (!silent) {
+                    console.error('Error loading subjects:', error);
+                    showError('Failed to load subjects. Please try again.');
+                }
+                throw error;
+            } finally {
+                if (!silent) showElementLoading('subject', false);
+            }
+        }
+        
+        // Prefetch functions
+        function prefetchSemestersOnHover() {
+            const branchSelect = document.getElementById('branch');
+            if (branchSelect.selectedIndex > 0) return; // Already selected
+            
+            // Prefetch semesters for the first 3 branches
+            for (let i = 1; i <= Math.min(3, branchSelect.options.length - 1); i++) {
+                const branch = branchSelect.options[i].value;
+                if (!apiCache.has(`semesters-${branch}`)) {
+                    fetchSemesters(branch, true);
+                }
+            }
+        }
+        
+        function prefetchSubjectsOnHover() {
+            const branchSelect = document.getElementById('branch');
+            const semesterSelect = document.getElementById('semester');
+            
+            if (semesterSelect.selectedIndex > 0) return; // Already selected
+            if (branchSelect.selectedIndex <= 0) return; // No branch selected
+            
+            const branch = branchSelect.value;
+            
+            // Prefetch subjects for the first 2 semesters
+            for (let i = 1; i <= Math.min(2, semesterSelect.options.length - 1); i++) {
+                const semester = semesterSelect.options[i].value;
+                const cacheKey = `subjects-${branch}-${semester}`;
+                if (!apiCache.has(cacheKey)) {
+                    fetchSubjects(branch, semester, true);
+                }
+            }
+        }
+        
+        function formatSemester(semester) {
+            return semester.replace('Sem_', 'Semester ');
+        }
+        
+        function populateSelect(elementId, options, defaultText, formatFn = null) {
+            const selectElement = document.getElementById(elementId);
+            if (!selectElement) return;
+            
+            // Clear existing options
+            selectElement.innerHTML = '';
+            
+            // Add default option
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = defaultText;
+            selectElement.appendChild(defaultOption);
+            
+            // Sort options with numeric awareness
+            const sortedOptions = [...options].sort((a, b) => {
+                // Extract numbers if they exist
+                const numA = a.match(/\d+/);
+                const numB = b.match(/\d+/);
+                
+                if (numA && numB) {
+                    return parseInt(numA[0]) - parseInt(numB[0]);
+                }
+                return a.localeCompare(b);
+            });
+            
+            // Add sorted options
+            sortedOptions.forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option;
+                optionElement.textContent = formatFn ? formatFn(option) : option;
+                selectElement.appendChild(optionElement);
+            });
+        }
+        
+        function resetSelect(elementId, defaultText) {
+            const selectElement = document.getElementById(elementId);
+            if (!selectElement) return;
+            
+            selectElement.innerHTML = `<option value="">${defaultText}</option>`;
+        }
+        
+        function updateButtonState() {
+            const branch = document.getElementById('branch').value;
+            const semester = document.getElementById('semester').value;
+            const subject = document.getElementById('subject').value;
+            const button = document.getElementById('continue-btn');
+            
+            const isEnabled = branch && semester && subject;
+            button.disabled = !isEnabled;
+        }
+        
+        function handleContinueClick() {
+            const branch = document.getElementById('branch').value;
+            const semester = document.getElementById('semester').value;
+            const subject = document.getElementById('subject').value;
+            
+            if (!branch || !semester || !subject) {
+                showError('Please select all fields to continue');
+                return;
+            }
+            
+            // Add loading state to button
+            const button = document.getElementById('continue-btn');
+            button.disabled = true;
+            button.innerHTML = '<div class="spinner" style="width: 1rem; height: 1rem; margin-right: 0.5rem;"></div> Loading...';
+            
+            const path = `${branch}/${semester}/${subject}`;
+            
+            // Prefetch the first PDF while transitioning
+            prefetchFirstPdf(path);
+            
+            // Navigate to viewer
+            window.location.href = `/viewer?pdf=${encodeURIComponent(path)}`;
+        }
+        
+        async function prefetchFirstPdf(path) {
+            try {
+                // Get list of PDFs for this path
+                const response = await fetchWithTimeout(
+                    `/api/directories?path=${encodeURIComponent(path)}`,
+                    { priority: 'low' },
+                    3000
+                );
+                
+                if (response.ok) {
+                    const pdfs = await response.json();
+                    if (pdfs.length > 0) {
+                        // Prefetch the first PDF
+                        const pdfUrl = `/static/pyqs/${path}/${pdfs[0]}`;
+                        const link = document.createElement('link');
+                        link.rel = 'prefetch';
+                        link.href = pdfUrl;
+                        link.as = 'document';
+                        document.head.appendChild(link);
+                    }
+                }
+            } catch (error) {
+                // Silent fail - prefetch is just an optimization
+                console.debug('Prefetch failed:', error);
+            }
+        }
+        
+        function showElementLoading(elementId, visible) {
+            const loader = document.getElementById(`${elementId}-loading`);
+            if (!loader) return;
+            
+            loader.style.display = visible ? 'flex' : 'none';
+        }
+        
+        function showError(message) {
+            alert(message);
+        }
+        
+        function showElement(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) element.style.display = 'block';
+        }
+        
+        function hideElement(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) element.style.display = 'none';
+        }
+        
+        // Enhanced fetch with timeout and priority support
+        async function fetchWithTimeout(url, options = {}, timeout = 8000) {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), timeout);
+            
+            // Add priority if supported (Chrome only)
+            if (options.priority && 'fetchPriority' in document.createElement('link')) {
+                options.fetchPriority = options.priority;
+            }
+            
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    signal: controller.signal,
+                    cache: 'default'
+                });
+                
+                clearTimeout(id);
+                return response;
+            } catch (error) {
+                clearTimeout(id);
+                throw error;
+            }
+        }
+
+        (function(c, l, a, r, i, t, y) {
+            c[a] = c[a] || function() { (c[a].q = c[a].q || []).push(arguments) };
+            t = l.createElement(r);
+            t.async = 1;
+            t.src = "https://www.clarity.ms/tag/" + i;
+            y = l.getElementsByTagName(r)[0];
+            y.parentNode.insertBefore(t, y);
+        })(window, document, "clarity", "script", "qnqi8o9y94"); 
+    </script>
+</body>
+</html>
