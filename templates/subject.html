@@ -8,11 +8,15 @@
     <meta name="keywords" content="{{ keywords | join(', ') }}">
     <meta property="og:url" content="{{ url }}">
     <link rel="canonical" href="{{ url }}">
-    <link rel="stylesheet" href="/static/css/answerbox.css?v=1.6">
+    <!-- Updated version number for cache busting -->
+    <link rel="stylesheet" href="/static/css/answerbox.css?v=1.6.2">
     <link rel="stylesheet" href="/static/css/subjectlayout.css?v=1.7">
     <script src="/static/js/script.js" defer></script>
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
-    
+    <!-- Preload code font for better performance -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" as="style">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap">
+
     {% if question %}
     <script type="application/ld+json">
     {
@@ -87,7 +91,7 @@
 
     <div class="info-box">
         <p>
-            If the code doesn't load, you can check it out on 
+            If the code doesn't load, you can check it out on
             <a href="https://github.com/AlbatrossC/codes/tree/main/answers/{{ subject_code }}" target="_blank" rel="noopener noreferrer">GitHub</a>
         </p>
     </div>
@@ -100,24 +104,32 @@
                 <strong>Q{{ question.question_no }}: </strong>{{ question.question }}
             </h1>
             {% for individual_file_name in question.file_name %}
-            <button class="view-code-btn"  
-                    onclick="loadFile('{{ subject_code }}', '{{ individual_file_name }}', '{{ question.title }} ({{ individual_file_name }})', this)">
+            <button class="view-code-btn"
+                    onclick="toggleCode('answerBox{{ question.question_no }}_{{ loop.index }}')"
+                    aria-label="View code for {{ individual_file_name }}">
                 {% if question.file_name | length == 1 %}View Code{% else %}View Code {{ loop.index }}{% endif %}
             </button>
+
+            <div class="answer-box" id="answerBox{{ question.question_no }}_{{ loop.index }}">
+                <div class="modal-content">
+                    <h3>{{ question.title }} ({{ individual_file_name }})</h3>
+                    <pre><code id="codeContent{{ question.question_no }}_{{ loop.index }}" class="language-{{ individual_file_name.split('.')[-1] }}">{{ file_contents[question.id][individual_file_name] }}</code></pre>
+                </div>
+                <div class="copy-close-container">
+                    <button class="copy-btn" onclick="copyCode('codeContent{{ question.question_no }}_{{ loop.index }}')">
+                        <span class="btn-icon">📋</span> Copy Code
+                    </button>
+                    <button class="close-btn" onclick="closeBox('answerBox{{ question.question_no }}_{{ loop.index }}')">
+                        <span class="btn-icon">✕</span> Close
+                    </button>
+                </div>
+            </div>
             {% endfor %}
             {% if question.file_name | length > 1 %}
             <p class="multiple-solutions-note">
                 <em>Note: Multiple "View Code" buttons may indicate different solutions to the same question or sub-parts of the question.</em>
             </p>
             {% endif %}
-            <div class="answer-box" id="answerBox{{ question.question_no }}">
-                <h3 id="questionText{{ question.question_no }}"></h3>
-                <pre id="codeContent{{ question.question_no }}"></pre>
-                <div class="copy-close-container">
-                    <button class="copy-btn" onclick="copyCode('codeContent{{ question.question_no }}')">Copy Code</button>
-                    <button class="close-btn" onclick="closeBox('answerBox{{ question.question_no }}')">Close</button>
-                </div>
-            </div>
         </article>
 
         <div class="other-questions">
@@ -153,24 +165,32 @@
                 </a>
             </h1>
             {% for individual_file_name in question_item.file_name %}
-            <button class="view-code-btn" 
-                    onclick="loadFile('{{ subject_code }}', '{{ individual_file_name }}', '{{ question_item.title }} ({{ individual_file_name }})', this)">
+            <button class="view-code-btn"
+                    onclick="toggleCode('answerBox{{ question_item.question_no }}_{{ loop.index }}')"
+                    aria-label="View code for {{ individual_file_name }}">
                 {% if question_item.file_name | length == 1 %}View Code{% else %}View Code {{ loop.index }}{% endif %}
             </button>
+
+            <div class="answer-box" id="answerBox{{ question_item.question_no }}_{{ loop.index }}">
+                <div class="modal-content">
+                    <h3>{{ question_item.title }} ({{ individual_file_name }})</h3>
+                    <pre><code id="codeContent{{ question_item.question_no }}_{{ loop.index }}" class="language-{{ individual_file_name.split('.')[-1] }}">{{ file_contents[question_item.id][individual_file_name] }}</code></pre>
+                </div>
+                <div class="copy-close-container">
+                    <button class="copy-btn" onclick="copyCode('codeContent{{ question_item.question_no }}_{{ loop.index }}')">
+                        <span class="btn-icon">📋</span> Copy Code
+                    </button>
+                    <button class="close-btn" onclick="closeBox('answerBox{{ question_item.question_no }}_{{ loop.index }}')">
+                        <span class="btn-icon">✕</span> Close
+                    </button>
+                </div>
+            </div>
             {% endfor %}
             {% if question_item.file_name | length > 1 %}
             <p class="multiple-solutions-note">
                 <em>Note: Multiple "View Code" buttons may indicate different solutions to the same question or sub-parts of the question.</em>
             </p>
             {% endif %}
-            <div class="answer-box" id="answerBox{{ question_item.question_no }}">
-                <h3 id="questionText{{ question_item.question_no }}"></h3>
-                <pre id="codeContent{{ question_item.question_no }}"></pre>
-                <div class="copy-close-container">
-                    <button class="copy-btn" onclick="copyCode('codeContent{{ question_item.question_no }}')">Copy Code</button>
-                    <button class="close-btn" onclick="closeBox('answerBox{{ question_item.question_no }}')">Close</button>
-                </div>
-            </div>
         </article>
         {% endfor %}
     </div>

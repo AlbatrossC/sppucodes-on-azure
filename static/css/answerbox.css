@@ -14,10 +14,11 @@
     padding: 25px;
     z-index: 1000;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
-    overflow: hidden;
+    overflow: hidden; /* Changed from visible to hidden to contain content properly */
     animation: modalFadeIn 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     transition: all 0.3s ease;
     will-change: transform, opacity, width, left;
+    box-sizing: border-box; /* Added for consistency */
 }
 
 /* Answer Box in Split View */
@@ -27,7 +28,8 @@
     width: calc(50% - 10px);
     max-width: none;
     height: 100vh;
-    border-radius: 12px;
+    max-height: 100vh; /* Ensure it can take full viewport height */
+    border-radius: 12px; /* Keep consistent radius or set to 0 if preferred for edge-to-edge */
     padding: 20px;
     margin-right: 10px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
@@ -76,15 +78,22 @@
 
 /* Modal Content */
 .modal-content {
-    height: 100%;
-    max-height: calc(90vh - 110px);
+    height: 100%; /* Allow it to fill available space defined by max-height */
+    max-height: calc(90vh - 110px); /* Default: 90vh modal - (2*25px padding) - 60px margin-bottom for buttons */
     overflow-y: auto;
-    padding-right: 10px;
-    margin-bottom: 60px;
+    padding-right: 10px; /* Space for scrollbar */
+    margin-bottom: 60px; /* Space for the fixed copy-close-container */
     scroll-behavior: smooth;
+    color: #f0f0f0; /* Default text color for modal content */
 }
 
-/* Custom Scrollbar */
+.answer-box.split-view .modal-content {
+    /* Split view: 100vh modal - (2*20px padding) - 60px margin-bottom for buttons */
+    max-height: calc(100vh - 40px - 60px);
+}
+
+
+/* Custom Scrollbar for Modal Content */
 .modal-content::-webkit-scrollbar {
     width: 12px;
 }
@@ -97,7 +106,7 @@
 .modal-content::-webkit-scrollbar-thumb {
     background-color: #505050;
     border-radius: 6px;
-    border: 2px solid #121212;
+    border: 2px solid #121212; /* Match track for inset look */
     transition: background-color 0.2s ease;
 }
 
@@ -105,33 +114,70 @@
     background-color: #606060;
 }
 
-/* Preformatted Text */
+/* Preformatted Text and Code elements within */
+.answer-box pre,
+.answer-box pre code {
+    font-family: 'Fira Code', 'JetBrains Mono', 'Source Code Pro', monospace; /* Monospaced font stack */
+    tab-size: 4; /* Standard tab width */
+    -moz-tab-size: 4; /* Firefox specific */
+    -webkit-font-smoothing: antialiased; /* Smoother text rendering */
+    -moz-osx-font-smoothing: grayscale; /* Smoother text rendering */
+    text-rendering: optimizeLegibility; /* Browser hint for text rendering */
+}
+
+.answer-box .modal-content h3 {
+    font-size: 1rem;
+    margin: var(--space-md) 0;
+    color: #e0e0e0;
+    font-weight: 500;
+    text-align: left;
+    border-left: 4px solid #2d76cc;
+    padding-left: 10px;
+}
+
 .answer-box pre {
-    background-color: #121212;
+    background-color: #101010; /* Slightly darker background for better contrast with modal bg #1e1e1e */
     border-radius: 8px;
-    padding: 24px;
-    font-family: 'Fira Code', 'JetBrains Mono', 'Source Code Pro', monospace;
-    font-size: 16px;
-    line-height: 1.7;
-    color: #F0F0F0;
-    border: 2px solid #4B4B4B;
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.6);
-    width: 100%;
+    padding: 20px 24px; /* Adjusted padding for better spacing */
+    font-size: 16px;    /* Base font size for code */
+    line-height: 1.7;   /* Generous line height for readability */
+    color: #DCDCDC;     /* Slightly brighter/crisper text color */
+    border: 1px solid #383838; /* Softer border */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5); /* Adjusted shadow */
+    width: 100%; /* Take full width of parent */
+    box-sizing: border-box; /* CRITICAL: Ensures padding and border are included in width calculation */
     position: relative;
     transition: box-shadow 0.3s ease, border-color 0.3s ease;
     will-change: box-shadow, border-color;
+    margin: 20px 0; /* Increased vertical margin */
+    overflow-x: auto; /* Enable horizontal scrolling for long lines */
+    white-space: pre; /* Preserve whitespace, enable horizontal scroll by default */
+}
+
+.answer-box pre code {
+    display: block; /* Ensures the code tag fills the pre block, good if pre only contains code */
+    padding: 0; /* Reset padding for code tag itself */
+    margin: 0;  /* Reset margin for code tag itself */
+    background: transparent; /* Inherit background from pre */
+    border: none; /* No border for code tag itself */
+    font-size: inherit; /* Inherit from pre */
+    line-height: inherit; /* Inherit from pre */
+    color: inherit; /* Inherit from pre */
+    white-space: inherit; /* Crucial: makes <code> follow <pre>'s white-space (pre or pre-wrap) */
 }
 
 .answer-box pre:hover {
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.8);
-    border-color: #5C5C5C;
+    box-shadow: 0 7px 22px rgba(0, 0, 0, 0.65); /* Enhanced hover shadow */
+    border-color: #505050; /* Brighter border on hover */
 }
 
-/* Responsive Design */
+/* Responsive Design for Preformatted Text */
 @media (min-width: 769px) {
     .answer-box pre {
-        white-space: pre-wrap;
-        word-wrap: break-word;
+        white-space: pre-wrap;       /* Wrap lines that are too long on larger screens */
+        word-wrap: break-word;       /* Legacy alias for overflow-wrap */
+        overflow-wrap: break-word;   /* Standard property for breaking long words/strings */
+        /* overflow-x: auto; still useful if a single word is too long to wrap */
     }
 }
 
@@ -143,42 +189,52 @@
         max-height: 95vh;
         border-radius: 8px;
     }
-    
+
     .modal-content {
-        max-height: calc(95vh - 80px);
+        max-height: calc(95vh - 80px); /* Original calculation: 95vh modal - chrome */
         padding-right: 5px;
         margin-bottom: 40px;
     }
-    
+
     .answer-box pre {
-        white-space: pre;
-        overflow-x: auto;
+        font-size: 14px; /* Slightly smaller font for mobile */
+        line-height: 1.6; /* Adjusted line height for mobile */
         padding: 15px;
-        font-size: 15px;
-        line-height: 1.5;
+        /* white-space: pre; /* Default from base, ensures horizontal scrolling */
+        /* overflow-x: auto; /* Default from base */
         border-width: 1px;
         border-radius: 6px;
+        margin: 15px 0;
     }
-    
+    /* .answer-box pre code will inherit font-size and line-height changes from .answer-box pre */
+
     .answer-box.split-view {
         width: 100%;
         left: 0;
-        transform: translateY(-50%);
-        border-radius: 8px;
+        top: 0; /* Align to top for full height */
+        transform: none; /* Reset transform for absolute positioning */
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0; /* No radius for full screen on mobile */
         margin-right: 0;
-        padding: 15px 10px;
+        padding: 15px 10px; /* Mobile padding */
     }
-    
+
+    .answer-box.split-view .modal-content {
+        /* Mobile Split view: 100vh modal - (2*15px padding) - 40px margin-bottom for buttons */
+        max-height: calc(100vh - 30px - 40px);
+    }
+
     .copy-close-container {
         padding: 8px 10px;
     }
-    
+
     .copy-btn, .close-btn {
         padding: 6px 12px;
         min-height: 30px;
         font-size: 12px;
     }
-    
+
     .modal-content::-webkit-scrollbar {
         width: 6px;
     }
@@ -194,9 +250,11 @@
     bottom: 0;
     left: 0;
     width: 100%;
-    background-color: #1e1e1e;
+    background-color: #1e1e1e; /* Match modal background */
     border-top: 1px solid #333;
+    box-sizing: border-box; /* Ensure padding is included in width */
     transition: background-color 0.3s ease;
+    z-index: 10; /* Above modal-content but potentially below other popups */
 }
 
 /* Button Styles */
@@ -247,7 +305,7 @@
 
 .close-btn:active {
     transform: translateY(0);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 6px rgba(0, 0, 0,_0.3);
 }
 
 /* Copied State Styling */
@@ -275,7 +333,7 @@
     }
 }
 
-/* Ripple Effect */
+/* Ripple Effect for Copy Button */
 .copy-btn::after {
     content: '';
     position: absolute;

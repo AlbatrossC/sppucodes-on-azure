@@ -201,6 +201,29 @@ def question(subject_code, question_id=None):
     for q in questions:
         groups.setdefault(q["group"], []).append(q)
 
+    # Read all file contents for the subject
+    file_contents = {}
+    answers_dir = os.path.join(os.path.dirname(__file__), 'answers', subject_code)
+    
+    for q in questions:
+        if isinstance(q.get("file_name"), list):
+            file_contents[q["id"]] = {}
+            for filename in q["file_name"]:
+                file_path = os.path.join(answers_dir, filename)
+                try:
+                    with open(file_path, 'r') as f:
+                        file_contents[q["id"]][filename] = f.read()
+                except:
+                    file_contents[q["id"]][filename] = "Error loading file content"
+        elif q.get("file_name"):
+            filename = q["file_name"]
+            file_path = os.path.join(answers_dir, filename)
+            try:
+                with open(file_path, 'r') as f:
+                    file_contents[q["id"]] = {filename: f.read()}
+            except:
+                file_contents[q["id"]] = {filename: "Error loading file content"}
+
     return render_template(
         "subject.html",
         title=title,
@@ -211,7 +234,8 @@ def question(subject_code, question_id=None):
         subject_name=subject.get("subject_name", ""),
         groups=groups,
         sorted_groups=sorted(groups.keys()),
-        question=selected_question
+        question=selected_question,
+        file_contents=file_contents
     )
 
 # Route for serving answers

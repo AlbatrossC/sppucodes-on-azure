@@ -54,22 +54,8 @@ console.log(`
         document.head.appendChild(script);
     }
 
-    // Function to load Google Fonts asynchronously
-    function loadGoogleFonts() {
-        var link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = 'https://fonts.googleapis.com/css2?family=Fira+Code&display=swap';
-        link.type = 'text/css';
-        document.head.appendChild(link);
-    }
-
-    // Load Google Tag Manager after a delay or when needed
-    setTimeout(loadGTM, 3000); // Delay GTM loading by 3 seconds
-
-    // Load Google Fonts and marked.js only when needed
-    document.addEventListener('DOMContentLoaded', function () {
-        loadGoogleFonts();
-    });
+    // Load Google Tag Manager after a delay
+    setTimeout(loadGTM, 3000);
 })();
 
 // Modal backdrop setup
@@ -77,76 +63,66 @@ const backdrop = document.createElement('div');
 backdrop.className = 'modal-backdrop';
 document.body.appendChild(backdrop);
 
-//Function to Load file
-async function loadFile(subject, fileName, questionText, element) {
-    console.log(`Loading file: ${subject}/${fileName}`);
-
-    const questionItem = element.closest('.question-item');
-    if (!questionItem) return;
-
-    const answerBox = questionItem.querySelector('.answer-box');
-    if (!answerBox) return;
-
-    const questionId = answerBox.id.match(/\d+[a-z]?/)?.[0];
-    if (!questionId) return;
-
-    const questionTitle = document.getElementById('questionText' + questionId);
-    const codeContent = document.getElementById('codeContent' + questionId);
-    if (!questionTitle || !codeContent) return;
-
-    // Show loading state
-    codeContent.textContent = 'Loading...';
-    answerBox.style.display = 'block';
-    backdrop.style.display = 'block';
-    document.body.style.overflow = 'hidden';
-
-    // Create modal content wrapper if needed
-    if (!answerBox.querySelector('.modal-content')) {
-        const modalContent = document.createElement('div');
-        modalContent.className = 'modal-content';
-        modalContent.append(...answerBox.children);
-        answerBox.appendChild(modalContent);
-    }
-
-    try {
-        const startTime = performance.now(); // For performance measurement
-        const response = await fetch(`/answers/${subject}/${fileName}`);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+// Function to toggle code visibility
+function toggleCode(boxId) {
+    const box = document.getElementById(boxId);
+    if (box) {
+        if (box.style.display === 'block') {
+            box.style.display = 'none';
+            backdrop.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        } else {
+            box.style.display = 'block';
+            backdrop.style.display = 'block';
+            document.body.style.overflow = 'hidden';
         }
-        
-        const data = await response.text();
-        questionTitle.textContent = questionText;
-        codeContent.textContent = data;
-        
-        console.log(`File loaded in ${performance.now() - startTime}ms`);
-    } catch (err) {
-        console.error('File load error:', err);
-        codeContent.textContent = `Error loading file: ${err.message}`;
-        alert(`Failed to load ${fileName}. Error: ${err.message}`);
     }
 }
 
 // Function to copy code to clipboard
+// Function to copy code to clipboard
 function copyCode(elementId) {
     const codeElement = document.getElementById(elementId);
-    if (!codeElement) return;
-    
+    if (!codeElement) {
+        console.error("Code element not found:", elementId);
+        return;
+    }
+
     const codeText = codeElement.innerText;
-    const copyButton = document.querySelector(`#${elementId}`).parentElement.querySelector('.copy-btn');
-    if (!copyButton) return;
+
+    // Find the parent .answer-box for this code element
+    const answerBox = codeElement.closest('.answer-box');
+    if (!answerBox) {
+        console.error("Could not find parent .answer-box for elementId:", elementId);
+        return;
+    }
+
+    // Find the copy button within this specific answer-box
+    const copyButton = answerBox.querySelector('.copy-btn');
+    if (!copyButton) {
+        console.error("Copy button not found in .answer-box for elementId:", elementId);
+        return;
+    }
 
     navigator.clipboard.writeText(codeText)
         .then(() => {
+            // The button's HTML includes an icon span. Let's preserve it.
+            // Original HTML: <span class="btn-icon">📋</span> Copy Code
+            // CSS will add '✓' using ::before when 'copied' class is present.
+            // So we just need to change the text part.
+
             copyButton.classList.add('copied');
-            copyButton.innerHTML = 'Copied to Clipboard';
+            // Change text content, assuming structure is <span class="btn-icon">...</span> TEXT_NODE
+            const iconSpanHTML = copyButton.querySelector('.btn-icon')?.outerHTML || '<span class="btn-icon">📋</span>'; // Keep icon
+            copyButton.innerHTML = iconSpanHTML + ' Copied!'; // CSS will add '✓' via .copied::before
+
             setTimeout(() => {
                 copyButton.classList.remove('copied');
-                copyButton.innerHTML = 'Copy Code';
+                copyButton.innerHTML = iconSpanHTML + ' Copy Code'; // Restore original text with icon
             }, 2000);
         })
         .catch(err => {
+            console.error('Failed to copy code:', err);
             alert('Failed to copy code! Please try selecting and copying manually.');
         });
 }
@@ -155,47 +131,18 @@ function copyCode(elementId) {
 function closeBox(boxId) {
     const box = document.getElementById(boxId);
     if (box) {
-        box.classList.remove('split-view');
         box.style.display = 'none';
         backdrop.style.display = 'none';
         document.body.style.overflow = 'auto';
     }
 }
 
-// Function to download code
-async function downloadCode(subject, fileName) {
-    try {
-        const response = await fetch(`/answers/${subject}/${fileName}`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        const data = await response.text();
-        
-        const blob = new Blob([data], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    } catch (err) {
-        alert(`Failed to download ${fileName}. Error: ${err.message}`);
-    }
-}
-
-// Event: Close modal or popup with Escape key
+// Close modals with Escape key
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
-        const popup = document.getElementById('dynamicCopyPopup');
-        if (popup && popup.style.display === 'flex') {
-            closePopup();
-        } else {
-            const visibleModal = document.querySelector('.answer-box[style*="display: block"]');
-            if (visibleModal) {
-                closeBox(visibleModal.id);
-            }
+        const visibleModal = document.querySelector('.answer-box[style*="display: block"]');
+        if (visibleModal) {
+            closeBox(visibleModal.id);
         }
     }
 });
@@ -207,3 +154,4 @@ backdrop.addEventListener('click', function() {
         closeBox(visibleModal.id);
     }
 });
+
