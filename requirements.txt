@@ -4,3 +4,4 @@ psycopg2-binary
 beautifulsoup4==4.12.3
 requests
 azure-storage-blob
+python-dotenv
