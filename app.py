@@ -2,30 +2,28 @@ from flask import Flask, render_template, send_from_directory, abort, request, r
 import os
 import psycopg2
 import json
-import requests
-from datetime import datetime
 from functools import lru_cache
+from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = 'karlos'
+app.secret_key = 'karlos'  # Secret key for session management
 
-
-# Root directory containing the pyqs
+# Path to directory containing question papers
 BASE_DIR = os.path.join(os.path.dirname(__file__), 'static', 'pyqs')
 
 # For Local Testing
 # DATABASE_URL = "postgresql://username:password@localhost:5432/database_name"
 DATABASE_URL = os.getenv("DATABASE_URL") 
 
-# Database connection function
+# Connect to PostgreSQL database
 def connect_db():
     try:
-        conn = psycopg2.connect(DATABASE_URL)
-        return conn
+        return psycopg2.connect(DATABASE_URL)
     except Exception as e:
         print(f"Database connection error: {e}")
         return None
-    
+
+# Form submission route for sending questions and answers
 @app.route('/submit', methods=["GET", "POST"])
 def submit():
     conn = connect_db()
@@ -35,7 +33,6 @@ def submit():
     if request.method == "POST":
         try:
             cur = conn.cursor()
-
             name = request.form.get("name")
             year = request.form.get("year")
             branch = request.form.get("branch")
@@ -51,16 +48,14 @@ def submit():
                 return redirect(url_for('submit'))
             else:
                 flash("PLEASE FILL ALL NECESSARY FIELDS", "error")
-
             cur.close()
         except Exception as e:
             flash(f"Error inserting data: {e}", "error")
         finally:
             conn.close()
-
     return render_template("submit.html")
 
-# Route for contact form
+# Contact form route
 @app.route("/contact", methods=["GET", "POST"])
 def contact():
     if request.method == "POST":
@@ -77,43 +72,42 @@ def contact():
 
                 cur = conn.cursor()
                 cur.execute("INSERT INTO contacts (name, email, message) VALUES (%s, %s, %s)", 
-                          (name, email, message))
+                            (name, email, message))
                 conn.commit()
                 cur.close()
                 conn.close()
-                
                 flash("Message sent successfully! Thank you", "success")
             except Exception as e:
                 flash(f"Error inserting data: {e}", "error")
             return redirect(url_for('contact'))
         else:
             flash("PLEASE FILL ALL NECESSARY FIELDS", "error")
-            
     return render_template("contact.html")
 
+# Question paper selection page
 @app.route('/questionpapers')
 def select():
     return render_template('select.html')
 
+# API to fetch list of directories or PDF files
 @app.route('/api/directories')
 def get_directories():
     path = request.args.get('path', '')
     if path.startswith('pyqs/'):
         path = path[len('pyqs/'):]
-    
     full_path = os.path.join(BASE_DIR, path)
-    
     if not os.path.exists(full_path):
         return jsonify([])
-    
     if os.path.isdir(full_path):
         return jsonify(_get_directory_contents(full_path))
     return jsonify([])
 
-CACHE_TIMEOUT = 3600 
+# Cache timeout in seconds
+CACHE_TIMEOUT = 3600
+
+# Cache helper to get directory contents
 @lru_cache(maxsize=1024)
 def _get_directory_contents(full_path):
-    """Cached helper function to get directory contents"""
     try:
         items = os.listdir(full_path)
         if any(item.lower().endswith('.pdf') for item in items):
@@ -123,57 +117,51 @@ def _get_directory_contents(full_path):
         print(f"Error reading directory {full_path}: {e}")
         return []
 
+# Serve static PDFs with caching headers
 @app.route('/static/pyqs/<path:filename>')
 def serve_pdf(filename):
-    # Add caching headers for the PDF files
-    response = send_from_directory(
-        BASE_DIR,
-        filename,
-        max_age=CACHE_TIMEOUT
-    )
-    # Enable browser caching
+    response = send_from_directory(BASE_DIR, filename, max_age=CACHE_TIMEOUT)
     response.headers['Cache-Control'] = f'public, max-age={CACHE_TIMEOUT}'
     return response
 
-
+# PDF viewer page
 @app.route('/viewer')
 def viewer():
     pdf_path = request.args.get('pdf')
     return render_template('viewer.html', pdf_path=pdf_path)
 
-# Custom Error Handlers
+# 404 Error handler
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('error.html'), 404
 
+# 500 Error handler
 @app.errorhandler(500)
 def internal_server_error(e):
     return render_template('error.html'), 500
 
-# Home route
+# Home page
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# Route for downloading codes
-downloads_folder = os.path.join(app.root_path, 'downloads')
-
+# Downloads page
 @app.route('/download')
 def download():
     return render_template('download.html')
 
+# Serve downloaded files
+downloads_folder = os.path.join(app.root_path, 'downloads')
 @app.route('/downloads/<filename>')
 def download_file(filename):
     return send_from_directory(downloads_folder, filename)
 
-# Route for serving questions
+# Serve questions and answers by subject code
 QUESTIONS_DIR = os.path.join(os.path.dirname(__file__), 'questions')
-
 @app.route("/<subject_code>")
 @app.route("/<subject_code>/<question_id>")
 def question(subject_code, question_id=None):
     json_file_path = os.path.join(QUESTIONS_DIR, f"{subject_code}.json")
-    
     if not os.path.exists(json_file_path):
         abort(404, description="Subject not found")
 
@@ -190,7 +178,6 @@ def question(subject_code, question_id=None):
     url = subject.get("url", f"https://sppucodes.vercel.app/{subject_code}")
 
     selected_question = question_dict.get(question_id) if question_id else None
-
     if selected_question:
         title = selected_question["question"]
         description = f"SPPU Codes: {selected_question['question']}"
@@ -201,10 +188,9 @@ def question(subject_code, question_id=None):
     for q in questions:
         groups.setdefault(q["group"], []).append(q)
 
-    # Read all file contents for the subject
+    # Load answer files for each question
     file_contents = {}
     answers_dir = os.path.join(os.path.dirname(__file__), 'answers', subject_code)
-    
     for q in questions:
         if isinstance(q.get("file_name"), list):
             file_contents[q["id"]] = {}
@@ -238,42 +224,37 @@ def question(subject_code, question_id=None):
         file_contents=file_contents
     )
 
-# Route for serving answers
+# Serve answer files
 @app.route('/answers/<subject>/<filename>')
 def get_answer(subject, filename):
-    try:      
+    try:
         base_dir = os.path.abspath(os.path.dirname(__file__))
         answers_dir = os.path.join(base_dir, 'answers', subject)
-
-        if not os.path.exists(answers_dir):
-            abort(404)
-
         full_path = os.path.join(answers_dir, filename)
-        if not os.path.exists(full_path):
+        if not os.path.exists(answers_dir) or not os.path.exists(full_path):
             abort(404)
-            
         return send_from_directory(answers_dir, filename)
     except Exception:
         abort(404)
 
-# Route for serving images
+# Serve image files
 @app.route('/images/<filename>')
 def get_image(filename):
     base_dir = os.path.abspath(os.path.dirname(__file__))
     images_dir = os.path.join(base_dir, 'images')
     return send_from_directory(images_dir, filename)
 
-# Route for sitemap
+# Serve sitemap.xml
 @app.route('/sitemap.xml')
 def sitemap():
     return send_from_directory('.', 'sitemap.xml')
 
+# Serve robots.txt
 @app.route('/robots.txt')
 def robots():
     return send_from_directory('.', 'robots.txt')
 
-# For clarity.js injecting script to every page
-
+# Inject Microsoft Clarity script into all HTML responses
 @app.after_request
 def inject_clarity(response):
     if response.content_type.startswith('text/html'):
@@ -291,10 +272,10 @@ def inject_clarity(response):
         """
         response.direct_passthrough = False
         response.set_data(response.get_data().replace(
-            b'</body>',
-            clarity_script.encode('utf-8') + b'</body>'
+            b'</body>', clarity_script.encode('utf-8') + b'</body>'
         ))
     return response
 
+# Run the Flask app on port 3000
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int("3000"), debug=True)

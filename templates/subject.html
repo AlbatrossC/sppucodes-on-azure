@@ -11,11 +11,12 @@
     <!-- Updated version number for cache busting -->
     <link rel="stylesheet" href="/static/css/answerbox.css?v=1.6.2">
     <link rel="stylesheet" href="/static/css/subjectlayout.css?v=1.7">
-    <script src="/static/js/script.js" defer></script>
     <link rel="icon" href="/images/favicon.ico" type="image/x-icon">
     <!-- Preload code font for better performance -->
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" as="style">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap">
+    <!-- Load non-critical JS separately -->
+    <script src="/static/js/script.js" defer></script>
 
     {% if question %}
     <script type="application/ld+json">
@@ -80,6 +81,98 @@
     }
     </script>
     {% endif %}
+    
+    <!-- Critical JavaScript functions embedded to prevent render blocking -->
+    <script>
+    // Create modal backdrop when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        const backdrop = document.createElement('div');
+        backdrop.className = 'modal-backdrop';
+        document.body.appendChild(backdrop);
+        
+        // Close modals with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const visibleModal = document.querySelector('.answer-box[style*="display: block"]');
+                if (visibleModal) {
+                    closeBox(visibleModal.id);
+                }
+            }
+        });
+        
+        // Close modals by clicking on backdrop
+        backdrop.addEventListener('click', function() {
+            const visibleModal = document.querySelector('.answer-box[style*="display: block"]');
+            if (visibleModal) {
+                closeBox(visibleModal.id);
+            }
+        });
+    });
+    
+    // Critical functions that should be immediately available
+    function toggleCode(boxId) {
+        const box = document.getElementById(boxId);
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (box && backdrop) {
+            if (box.style.display === 'block') {
+                box.style.display = 'none';
+                backdrop.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            } else {
+                box.style.display = 'block';
+                backdrop.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            }
+        }
+    }
+
+    function copyCode(elementId) {
+        const codeElement = document.getElementById(elementId);
+        if (!codeElement) {
+            console.error("Code element not found:", elementId);
+            return;
+        }
+
+        const codeText = codeElement.innerText;
+        const answerBox = codeElement.closest('.answer-box');
+        if (!answerBox) {
+            console.error("Could not find parent .answer-box for elementId:", elementId);
+            return;
+        }
+
+        const copyButton = answerBox.querySelector('.copy-btn');
+        if (!copyButton) {
+            console.error("Copy button not found in .answer-box for elementId:", elementId);
+            return;
+        }
+
+        navigator.clipboard.writeText(codeText)
+            .then(() => {
+                copyButton.classList.add('copied');
+                const iconSpanHTML = copyButton.querySelector('.btn-icon')?.outerHTML || '<span class="btn-icon">📋</span>';
+                copyButton.innerHTML = iconSpanHTML + ' Copied!';
+
+                setTimeout(() => {
+                    copyButton.classList.remove('copied');
+                    copyButton.innerHTML = iconSpanHTML + ' Copy Code';
+                }, 2000);
+            })
+            .catch(err => {
+                console.error('Failed to copy code:', err);
+                alert('Failed to copy code! Please try selecting and copying manually.');
+            });
+    }
+
+    function closeBox(boxId) {
+        const box = document.getElementById(boxId);
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (box && backdrop) {
+            box.style.display = 'none';
+            backdrop.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    }
+    </script>
 </head>
 <body>
     <header>
